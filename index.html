@@ -166,11 +166,24 @@
             document.getElementById('stats-rate').textContent = `${rate}%`;
         }
 
-        // Kullanıcıdan onay alarak tüm görevleri tamamen siler ve listeyi sıfırlar.
+        // Kullanıcıdan onay alarak o anki filtreye göre görevleri siler ve listeyi sıfırlar.
         function clearAllTodos() {
-            const confirmClear = confirm("Tüm görevleri silmek istediğinize emin misiniz? Bu işlem geri alınamaz.");
+            let confirmMsg = "Tüm görevleri silmek istediğinize emin misiniz? Bu işlem geri alınamaz.";
+            if (currentFilter === 'active') {
+                confirmMsg = "Tüm tamamlanmamış (aktif) görevleri silmek istediğinize emin misiniz?";
+            } else if (currentFilter === 'completed') {
+                confirmMsg = "Tüm tamamlanmış görevleri silmek istediğinize emin misiniz?";
+            }
+
+            const confirmClear = confirm(confirmMsg);
             if (confirmClear) {
-                todos = [];
+                if (currentFilter === 'all') {
+                    todos = [];
+                } else if (currentFilter === 'active') {
+                    todos = todos.filter(todo => todo.completed);
+                } else if (currentFilter === 'completed') {
+                    todos = todos.filter(todo => !todo.completed);
+                }
                 saveTodos();
                 renderTodos();
             }
@@ -184,9 +197,24 @@
             // Update stats first
             updateStats();
 
-            // Toggle clear all button visibility
+            // Toggle clear all button visibility and text based on current filter and tasks count
             const clearContainer = document.getElementById('clear-container');
-            if (todos.length > 0) {
+            const clearBtn = clearContainer.querySelector('.btn-clear-all');
+            
+            // Check if there are tasks matching the current filter
+            let hasVisibleTodos = false;
+            if (currentFilter === 'all' && todos.length > 0) {
+                hasVisibleTodos = true;
+                clearBtn.textContent = 'Tümünü Temizle';
+            } else if (currentFilter === 'active' && todos.some(todo => !todo.completed)) {
+                hasVisibleTodos = true;
+                clearBtn.textContent = 'Aktifleri Temizle';
+            } else if (currentFilter === 'completed' && todos.some(todo => todo.completed)) {
+                hasVisibleTodos = true;
+                clearBtn.textContent = 'Tamamlananları Temizle';
+            }
+
+            if (hasVisibleTodos) {
                 clearContainer.style.display = 'flex';
             } else {
                 clearContainer.style.display = 'none';
