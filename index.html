@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yapılacaklar Listesi | Todo App</title>
+    <meta name="description" content="Kullanıcı dostu, öncelik etiketli ve modern arayüze sahip Yapılacaklar Listesi uygulaması.">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <main class="todo-card">
+            <h1>Yapılacaklar Listesi</h1>
+            
+            <!-- Todo Add Form -->
+            <form class="todo-form" id="todo-form" onsubmit="addTask(event)">
+                <div class="input-wrapper">
+                    <input type="text" id="todo-input" class="todo-input" placeholder="Yeni bir görev ekleyin..." required autocomplete="off">
+                </div>
+                <select id="priority-select" class="priority-select" aria-label="Öncelik Seviyesi">
+                    <option value="low">Düşük</option>
+                    <option value="medium" selected>Orta</option>
+                    <option value="high">Yüksek</option>
+                </select>
+                <button type="submit" class="btn-add">Ekle</button>
+            </form>
+
+            <!-- Filters -->
+            <div class="filters">
+                <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">Hepsi</button>
+                <button class="filter-btn" id="filter-active" onclick="setFilter('active')">Aktif</button>
+                <button class="filter-btn" id="filter-completed" onclick="setFilter('completed')">Tamamlananlar</button>
+            </div>
+
+            <!-- Todo List -->
+            <ul class="todo-list" id="todo-list">
+                <!-- Items will be injected dynamically -->
+            </ul>
+        </main>
+    </div>
+
+    <script>
+        // App State
+        let todos = JSON.parse(localStorage.getItem('todos')) || [];
+        let currentFilter = 'all';
+
+        // Add Task
+        function addTask(event) {
+            event.preventDefault();
+            const input = document.getElementById('todo-input');
+            const prioritySelect = document.getElementById('priority-select');
+            
+            const text = input.value.trim();
+            if (!text) return;
+
+            const newTodo = {
+                id: Date.now(),
+                text: text,
+                completed: false,
+                priority: prioritySelect.value,
+                createdAt: new Date().toISOString()
+            };
+
+            todos.push(newTodo);
+            saveTodos();
+            renderTodos();
+            
+            // Reset form
+            input.value = '';
+            prioritySelect.value = 'medium';
+        }
+
+        // Toggle Task Complete State
+        function toggleTodo(id) {
+            todos = todos.map(todo => {
+                if (todo.id === id) {
+                    return { ...todo, completed: !todo.completed };
+                }
+                return todo;
+            });
+            saveTodos();
+            renderTodos();
+        }
+
+        // Delete Task
+        function deleteTodo(id) {
+            todos = todos.filter(todo => todo.id !== id);
+            saveTodos();
+            renderTodos();
+        }
+
+        // Set Filter
+        function setFilter(filter) {
+            currentFilter = filter;
+            
+            // Update UI class active state
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`filter-${filter}`).classList.add('active');
+            
+            renderTodos();
+        }
+
+        // Save to LocalStorage
+        function saveTodos() {
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        // Render Todo List
+        function renderTodos() {
+            const listElement = document.getElementById('todo-list');
+            listElement.innerHTML = '';
+
+            // 1. Filter items
+            let filteredTodos = todos;
+            if (currentFilter === 'active') {
+                filteredTodos = todos.filter(todo => !todo.completed);
+            } else if (currentFilter === 'completed') {
+                filteredTodos = todos.filter(todo => todo.completed);
+            }
+
+            // 2. Sort items: Completed tasks go to the bottom
+            // If both are completed or both are active, maintain creation order (newest first)
+            filteredTodos.sort((a, b) => {
+                if (a.completed !== b.completed) {
+                    return a.completed ? 1 : -1;
+                }
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
+
+            if (filteredTodos.length === 0) {
+                listElement.innerHTML = `<li style="text-align: center; color: var(--text-muted); padding: 20px; font-size: 14px;">Gösterilecek görev bulunamadı.</li>`;
+                return;
+            }
+
+            // 3. Generate HTML
+            filteredTodos.forEach(todo => {
+                const li = document.createElement('li');
+                li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+                
+                const priorityLabels = {
+                    low: 'Düşük',
+                    medium: 'Orta',
+                    high: 'Yüksek'
+                };
+
+                li.innerHTML = `
+                    <div class="todo-left">
+                        <div class="custom-checkbox" onclick="toggleTodo(${todo.id})">
+                            ${todo.completed ? '✓' : ''}
+                        </div>
+                        <span class="todo-text">${escapeHTML(todo.text)}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="priority-badge badge-${todo.priority}">${priorityLabels[todo.priority]}</span>
+                        <button class="btn-delete" onclick="deleteTodo(${todo.id})" aria-label="Görevi Sil">✕</button>
+                    </div>
+                `;
+                listElement.appendChild(li);
+            });
+        }
+
+        // Helper: Escape HTML strings to prevent XSS
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        // Initial Load
+        renderTodos();
+    </script>
+</body>
+</html>
