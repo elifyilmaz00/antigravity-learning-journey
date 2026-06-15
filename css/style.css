@@ -266,6 +266,31 @@ h1 {
     letter-spacing: 0.5px;
 }
 
+/* Clear All Container & Button */
+.clear-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+
+.btn-clear-all {
+    padding: 8px 16px;
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.btn-clear-all:hover {
+    background-color: rgba(239, 68, 68, 0.08);
+    color: var(--priority-high);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
 /* List Styling */
 .todo-list {
     list-style: none;

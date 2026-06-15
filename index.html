@@ -52,6 +52,11 @@
                 </div>
             </div>
 
+            <!-- Clear All Container -->
+            <div class="clear-container" id="clear-container" style="display: none;">
+                <button class="btn-clear-all" onclick="clearAllTodos()">Tümünü Temizle</button>
+            </div>
+
             <!-- Todo List -->
             <ul class="todo-list" id="todo-list">
                 <!-- Items will be injected dynamically -->
@@ -69,17 +74,7 @@
         document.documentElement.setAttribute('data-theme', savedTheme);
         updateThemeToggleIcon(savedTheme);
 
-        // Toggle Theme
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeToggleIcon(newTheme);
-        }
-
-        // Update Theme Toggle Icon
+        // Tema durumuna göre buton simgesini güneş veya ay olarak günceller.
         function updateThemeToggleIcon(theme) {
             const btn = document.getElementById('theme-toggle');
             if (theme === 'dark') {
@@ -89,7 +84,17 @@
             }
         }
 
-        // Add Task
+        // Temayı (Karanlık / Açık) değiştirir ve tercihi LocalStorage'a kaydeder.
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggleIcon(newTheme);
+        }
+
+        // Yeni bir görevi listeye ekler, LocalStorage'a kaydeder ve arayüzü günceller.
         function addTask(event) {
             event.preventDefault();
             const input = document.getElementById('todo-input');
@@ -115,7 +120,7 @@
             prioritySelect.value = 'medium';
         }
 
-        // Toggle Task Complete State
+        // Bir görevin tamamlanma durumunu (aktif/tamamlandı) tersine çevirir.
         function toggleTodo(id) {
             todos = todos.map(todo => {
                 if (todo.id === id) {
@@ -127,15 +132,14 @@
             renderTodos();
         }
 
-        // Delete Task
-        // Delete Task
+        // Belirtilen kimliğe (id) sahip görevi listeden siler.
         function deleteTodo(id) {
             todos = todos.filter(todo => todo.id !== id);
             saveTodos();
             renderTodos();
         }
 
-        // Set Filter
+        // Listelenecek görevlerin filtreleme seçeneğini (Hepsi, Aktif, Tamamlananlar) ayarlar.
         function setFilter(filter) {
             currentFilter = filter;
             
@@ -146,12 +150,12 @@
             renderTodos();
         }
 
-        // Save to LocalStorage
+        // Görevler listesini tarayıcının yerel hafızasına (LocalStorage) kaydeder.
         function saveTodos() {
             localStorage.setItem('todos', JSON.stringify(todos));
         }
 
-        // Update Statistics Panel
+        // Toplam görev sayısını, tamamlananları ve başarı yüzdesini hesaplayıp günceller.
         function updateStats() {
             const total = todos.length;
             const completed = todos.filter(todo => todo.completed).length;
@@ -162,13 +166,31 @@
             document.getElementById('stats-rate').textContent = `${rate}%`;
         }
 
-        // Render Todo List
+        // Kullanıcıdan onay alarak tüm görevleri tamamen siler ve listeyi sıfırlar.
+        function clearAllTodos() {
+            const confirmClear = confirm("Tüm görevleri silmek istediğinize emin misiniz? Bu işlem geri alınamaz.");
+            if (confirmClear) {
+                todos = [];
+                saveTodos();
+                renderTodos();
+            }
+        }
+
+        // Görevleri filtreleyerek, tamamlananları en alta sıralayıp ekranda listeler.
         function renderTodos() {
             const listElement = document.getElementById('todo-list');
             listElement.innerHTML = '';
 
             // Update stats first
             updateStats();
+
+            // Toggle clear all button visibility
+            const clearContainer = document.getElementById('clear-container');
+            if (todos.length > 0) {
+                clearContainer.style.display = 'flex';
+            } else {
+                clearContainer.style.display = 'none';
+            }
 
             // 1. Filter items
             let filteredTodos = todos;
@@ -218,7 +240,7 @@
             });
         }
 
-        // Helper: Escape HTML strings to prevent XSS
+        // XSS saldırılarını önlemek için HTML özel karakterlerini güvenli hale getirir.
         function escapeHTML(str) {
             return str.replace(/[&<>'"]/g, 
                 tag => ({
