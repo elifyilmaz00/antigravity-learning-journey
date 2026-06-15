@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Temayı Değiştir">🌙</button>
+
     <div class="container">
         <main class="todo-card">
             <h1>Yapılacaklar Listesi</h1>
@@ -33,6 +36,22 @@
                 <button class="filter-btn" id="filter-completed" onclick="setFilter('completed')">Tamamlananlar</button>
             </div>
 
+            <!-- Stats Panel -->
+            <div class="stats-panel">
+                <div class="stats-card">
+                    <div class="stats-val" id="stats-total">0</div>
+                    <div class="stats-lbl">Toplam</div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-val" id="stats-completed">0</div>
+                    <div class="stats-lbl">Tamamlanan</div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-val" id="stats-rate">0%</div>
+                    <div class="stats-lbl">Başarı Oranı</div>
+                </div>
+            </div>
+
             <!-- Todo List -->
             <ul class="todo-list" id="todo-list">
                 <!-- Items will be injected dynamically -->
@@ -44,6 +63,31 @@
         // App State
         let todos = JSON.parse(localStorage.getItem('todos')) || [];
         let currentFilter = 'all';
+
+        // Load theme from localStorage
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeToggleIcon(savedTheme);
+
+        // Toggle Theme
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggleIcon(newTheme);
+        }
+
+        // Update Theme Toggle Icon
+        function updateThemeToggleIcon(theme) {
+            const btn = document.getElementById('theme-toggle');
+            if (theme === 'dark') {
+                btn.textContent = '☀️';
+            } else {
+                btn.textContent = '🌙';
+            }
+        }
 
         // Add Task
         function addTask(event) {
@@ -84,6 +128,7 @@
         }
 
         // Delete Task
+        // Delete Task
         function deleteTodo(id) {
             todos = todos.filter(todo => todo.id !== id);
             saveTodos();
@@ -106,10 +151,24 @@
             localStorage.setItem('todos', JSON.stringify(todos));
         }
 
+        // Update Statistics Panel
+        function updateStats() {
+            const total = todos.length;
+            const completed = todos.filter(todo => todo.completed).length;
+            const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            document.getElementById('stats-total').textContent = total;
+            document.getElementById('stats-completed').textContent = completed;
+            document.getElementById('stats-rate').textContent = `${rate}%`;
+        }
+
         // Render Todo List
         function renderTodos() {
             const listElement = document.getElementById('todo-list');
             listElement.innerHTML = '';
+
+            // Update stats first
+            updateStats();
 
             // 1. Filter items
             let filteredTodos = todos;
@@ -120,7 +179,6 @@
             }
 
             // 2. Sort items: Completed tasks go to the bottom
-            // If both are completed or both are active, maintain creation order (newest first)
             filteredTodos.sort((a, b) => {
                 if (a.completed !== b.completed) {
                     return a.completed ? 1 : -1;
